@@ -4,3 +4,4 @@ mangum
 uvicorn
 numpy
 scikit-learn
+Jinja2
