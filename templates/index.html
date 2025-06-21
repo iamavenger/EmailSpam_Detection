@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ProSpamDetector | AI-Powered Email Analysis</title>
+    <script src="https://unpkg.com/htmx.org@1.9.6"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #7749e2;
+            --primary-dark: #2e326d;
+            --spam: #e63946;
+            --ham: #06d6a0;
+            --light: #f8f9fa;
+            --dark: #212529;
+            --gray: #6c757d;
+            --border: #e0e0e0;
+            --card-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #f5f7ff 0%, #f0f4ff 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            color: var(--dark);
+            line-height: 1.6;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 800px;
+            background: white;
+            border-radius: 16px;
+            box-shadow: var(--card-shadow);
+            overflow: hidden;
+        }
+        
+        header {
+            background: linear-gradient(120deg, var(--primary), #060507);
+            color: white;
+            padding: 30px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        header::before {
+            content: "";
+            position: absolute;
+            top: -50px;
+            right: -50px;
+            width: 150px;
+            height: 150px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+        }
+        
+        header::after {
+            content: "";
+            position: absolute;
+            bottom: -80px;
+            left: -40px;
+            width: 200px;
+            height: 200px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 50%;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .logo i {
+            font-size: 2.5rem;
+            background: rgba(255, 255, 255, 0.2);
+            width: 70px;
+            height: 70px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+        }
+        
+        h1 {
+            font-size: 2.2rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            position: relative;
+            z-index: 2;
+        }
+        
+        .subtitle {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            max-width: 600px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 2;
+        }
+        
+        .content {
+            padding: 40px;
+        }
+        
+        .form-container {
+            background: var(--light);
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 30px;
+            border: 1px solid var(--border);
+        }
+        
+        .form-group {
+            margin-bottom: 25px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: 600;
+            color: var(--dark);
+            font-size: 1.1rem;
+        }
+        
+        textarea {
+            width: 100%;
+            min-height: 220px;
+            padding: 18px;
+            font-size: 1rem;
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            resize: vertical;
+            transition: all 0.3s ease;
+            background: white;
+        }
+        
+        textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(67, 97, 238, 0.15);
+        }
+        
+        .btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 16px 30px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            border-radius: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            width: 100%;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(67, 97, 238, 0.3);
+        }
+        
+        .btn:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(67, 97, 238, 0.4);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        /* RESULT CONTAINER - FIXED */
+        .result-container {
+            background: white;
+            border-radius: 12px;
+            padding: 0; /* Removed fixed padding */
+            border: 1px solid var(--border);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            min-height: 50px; /* Minimum height */
+            overflow: hidden;
+            transition: all 0.4s ease;
+            max-height: 0;
+            opacity: 0;
+        }
+        
+        .result-container.show {
+            max-height: 500px;
+            opacity: 1;
+            padding: 30px; /* Padding only when visible */
+        }
+        
+        #result {
+            min-height: 120px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            text-align: center;
+        }
+        
+        #result.spam {
+            color: var(--spam);
+        }
+        
+        #result.ham {
+            color: var(--ham);
+        }
+        
+        .result-icon {
+            font-size: 3.5rem;
+            margin-bottom: 20px;
+        }
+        
+        .result-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 15px;
+        }
+        
+        .result-message {
+            font-size: 1.1rem;
+            margin-bottom: 10px;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+        
+        .result-warning {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(230, 57, 70, 0.15);
+            border-radius: 8px;
+            font-size: 1rem;
+            max-width: 500px;
+            margin: 20px auto 0;
+        }
+        
+        .htmx-indicator {
+            display: none;
+        }
+        
+        .htmx-request .htmx-indicator {
+            display: inline-block;
+        }
+        
+        .htmx-request .btn-text {
+            display: none;
+        }
+        
+        .spinner {
+            width: 24px;
+            height: 24px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 40px;
+        }
+        
+        .feature {
+            text-align: center;
+            padding: 20px;
+            background: rgba(67, 97, 238, 0.05);
+            border-radius: 10px;
+            transition: transform 0.3s ease;
+        }
+        
+        .feature:hover {
+            transform: translateY(-5px);
+        }
+        
+        .feature i {
+            font-size: 2.2rem;
+            color: var(--primary);
+            margin-bottom: 15px;
+        }
+        
+        .feature h3 {
+            margin-bottom: 10px;
+            font-size: 1.2rem;
+        }
+        
+        footer {
+            text-align: center;
+            padding: 30px;
+            color: var(--gray);
+            font-size: 0.95rem;
+            border-top: 1px solid var(--border);
+            background: var(--light);
+        }
+        
+        @media (max-width: 768px) {
+            header {
+                padding: 25px 20px;
+            }
+            
+            .content {
+                padding: 25px;
+            }
+            
+            .form-container {
+                padding: 25px;
+            }
+            
+            h1 {
+                font-size: 1.8rem;
+            }
+            
+            .logo i {
+                font-size: 2rem;
+                width: 60px;
+                height: 60px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            header {
+                padding: 20px 15px;
+            }
+            
+            .content {
+                padding: 20px;
+            }
+            
+            .form-container {
+                padding: 20px;
+            }
+            
+            h1 {
+                font-size: 1.6rem;
+            }
+            
+            .subtitle {
+                font-size: 1rem;
+            }
+            
+            .result-title {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">
+                <i class="fas fa-shield-alt"></i>
+            </div>
+            <h1>Email Spam Detector</h1>
+            <p class="subtitle">AI-powered email analysis to protect your inbox from spam and phishing attempts</p>
+        </header>
+        
+        <div class="content">
+            <div class="form-container">
+                <form hx-post="/check" hx-target="#result" hx-swap="innerHTML">
+                    <div class="form-group">
+                        <label for="emailContent"><i class="fas fa-envelope"></i> Email Content</label>
+                        <textarea 
+                            id="emailContent"
+                            name="email" 
+                            placeholder="Paste the email content you want to analyze here..."
+                            required
+                        ></textarea>
+                    </div>
+                    
+                    <button type="submit" class="btn">
+                        <span class="btn-text">Analyze Email</span>
+                        <span class="htmx-indicator">
+                            <span class="spinner"></span>
+                        </span>
+                    </button>
+                </form>
+            </div>
+            
+            <!-- Fixed result container -->
+            <div class="result-container" id="resultContainer">
+                <div id="result"></div>
+            </div>
+            
+            <div class="features">
+                <div class="feature">
+                    <i class="fas fa-brain"></i>
+                    <h3>AI-Powered</h3>
+                    <p>Advanced machine learning algorithms</p>
+                </div>
+                <div class="feature">
+                    <i class="fas fa-bolt"></i>
+                    <h3>Real-Time</h3>
+                    <p>Instant results in milliseconds</p>
+                </div>
+                <div class="feature">
+                    <i class="fas fa-shield-alt"></i>
+                    <h3>Secure</h3>
+                    <p>Your data is never stored</p>
+                </div>
+                <div class="feature">
+                    <i class="fas fa-chart-line"></i>
+                    <h3>Accurate</h3>
+                    <p>99.8% detection accuracy</p>
+                </div>
+            </div>
+        </div>
+        
+        <footer>
+            <p>© 2025  | Created by Prasad Raju G | Enterprise-Grade Spam Protection</p>
+        </footer>
+    </div>
+
+    <script>
+        // Fixed JavaScript
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize result container
+            const resultContainer = document.getElementById('resultContainer');
+            
+            // Listen for HTMX events
+            document.addEventListener('htmx:afterSwap', function(event) {
+                if (event.detail.target.id === 'result') {
+                    // Show the result container
+                    resultContainer.classList.add('show');
+                    
+                    // Scroll to results
+                    resultContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            });
+            
+            // Reset on form submit
+            document.querySelector('form').addEventListener('submit', function() {
+                // Clear previous result
+                document.getElementById('result').innerHTML = '';
+                // Hide result container
+                resultContainer.classList.remove('show');
+            });
+        });
+    </script>
+</body>
+</html>
