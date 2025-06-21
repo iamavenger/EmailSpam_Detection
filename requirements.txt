@@ -2,3 +2,5 @@ joblib
 fastapi
 mangum
 uvicorn
+numpy
+scikit-learn
